@@ -5,9 +5,7 @@
   "main": "src/bear-mcp-server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js",
-    "index": "node src/create-index.js",
-    "test": "node src/lib/explore-database.js"
+    "start": "node src/server.js"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",

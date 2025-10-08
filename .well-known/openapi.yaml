@@ -1,44 +1,32 @@
 openapi: 3.0.1
 info:
   title: Bear Notes Plugin API
-  description: API for querying and editing local Bear notes.
-  version: "1.1.0"
+  description: API for querying local Bear notes.
+  version: "1.0.0"
 servers:
-  - url: https://522c6bc096be.ngrok-free.app
-
+  - url: https://30bf06ba4484.ngrok-free.app
 paths:
   /query:
     post:
       operationId: query
-      summary: 执行笔记搜索、读取或标签修改操作
+      summary: 执行笔记搜索或读取操作
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
+              required:         # Added required field to prevent tool=undefined errors
+                - tool
+                - args
               properties:
                 tool:
                   type: string
+                  enum: [search_notes, get_tags, get_note, retrieve_for_rag]
                   description: 调用的工具名称
-                  enum:
-                    - search_notes
-                    - get_tags
-                    - get_note
-                    - retrieve_for_rag
-                    - modify_note_tag
-                    - normalize_tag_case
-                    - unify_tag_prefix
-                    - merge_tags
-                    - find_notes_by_tag
                 args:
-                  oneOf:
-                    - $ref: '#/components/schemas/SearchNotesArgs'
-                    - $ref: '#/components/schemas/FindNotesByTagArgs'
-                    - $ref: '#/components/schemas/ModifyNoteTagArgs'
-                    - $ref: '#/components/schemas/NormalizeTagCaseArgs'
-                    - $ref: '#/components/schemas/UnifyTagPrefixArgs'
-                    - $ref: '#/components/schemas/MergeTagsArgs'
+                  type: object
+                  description: 工具所需的参数
       responses:
         "200":
           description: 成功响应
@@ -46,58 +34,16 @@ paths:
             application/json:
               schema:
                 type: object
-
-components:
-  schemas:
-    SearchNotesArgs:
-      type: object
-      properties:
-        query:
-          type: string
-          description: 搜索关键词，如 "tag:Resource/阅读笔记"
-
-    FindNotesByTagArgs:
-      type: object
-      properties:
-        tag:
-          type: string
-          description: 要搜索的标签，如 "Resource/阅读笔记"
-        limit:
-          type: integer
-          default: 20
-          description: 返回笔记数量上限
-
-    ModifyNoteTagArgs:
-      type: object
-      properties:
-        note_id:
-          type: string
-        remove_tag:
-          type: string
-        add_tag:
-          type: string
-
-    NormalizeTagCaseArgs:
-      type: object
-      properties:
-        style:
-          type: string
-          enum: [lowercase, uppercase]
-
-    UnifyTagPrefixArgs:
-      type: object
-      properties:
-        mappings:
-          type: object
-          additionalProperties:
-            type: string
-
-    MergeTagsArgs:
-      type: object
-      properties:
-        from_tags:
-          type: array
-          items:
-            type: string
-        to_tag:
-          type: string
+                properties:
+                  notes:
+                    type: array
+                    items:
+                      type: object
+                  searchMethod:
+                    type: string
+                  tags:
+                    type: array
+                    items:
+                      type: string
+                  note:
+                    type: object

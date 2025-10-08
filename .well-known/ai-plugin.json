@@ -1,16 +1,17 @@
 {
-  "schema_version": "v1.1",
-  "name_for_human": "Bear Notes Assistant",
+  "schema_version": "v1.0",
   "name_for_model": "bear_notes",
-  "description_for_model": "提供笔记搜索、标签获取与批量修改功能，包括标签合并、大小写统一，以及根据标签筛选笔记（find_notes_by_tag）",
+  "name_for_human": "Bear Notes",
+  "description_for_model": "插件，用于检索用户的 Bear 笔记内容，支持关键词和语义搜索。",
+  "description_for_human": "从 Bear 笔记中检索信息。",
   "auth": {
     "type": "none"
   },
   "api": {
     "type": "openapi",
-    "url": "https://522c6bc096be.ngrok-free.app/openapi.yaml"
+    "url": "https://30bf06ba4484.ngrok-free.app/openapi.yaml"
   },
-  "logo_url": "https://522c6bc096be.ngrok-free.app/logo.png",
-  "contact_email": "ydongpeng41@gmail.com",
-  "legal_info_url": "https://example.com/legal"
+  "logo_url": "https://30bf06ba4484.ngrok-free.app/logo.png",
+  "contact_email": "contact@yourdomain.com",
+  "legal_info_url": "https://30bf06ba4484.ngrok-free.app/legal"
 }
