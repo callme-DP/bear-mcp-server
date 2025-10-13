@@ -375,14 +375,15 @@ export async function insertNote(db, title, content) {
 //今日洞察
 export async function getTodayAndRelatedNotes(db, hours = 24, limit = 5) {
   // Step 1. 获取当天笔记
-  const now = Date.now() / 1000;
-  const start = now - hours * 3600 - 978307200;
+const localNow = new Date();
+const todayStart = new Date(localNow.getFullYear(), localNow.getMonth(), localNow.getDate());
+const startTimestamp = todayStart.getTime() / 1000 - 978307200; // Bear时间
   const todayNotes = await db.allAsync(`
     SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as content
     FROM ZSFNOTE
     WHERE ZTRASHED = 0 AND ZMODIFICATIONDATE >= ?
     ORDER BY ZMODIFICATIONDATE DESC
-  `, [start]);
+  `, [startTimestamp]);
 
   // Step 2. 合并当天内容用于后续embedding
   const todayContent = todayNotes.map(n => n.content).join("\n");
