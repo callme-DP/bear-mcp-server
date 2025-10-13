@@ -1,35 +1,33 @@
 openapi: 3.0.1
 info:
   title: Bear Notes Plugin API
-  description: API for querying local Bear notes.
+  description: API for querying local Bear notes
   version: "1.0.0"
+
 servers:
-  - url: https://30bf06ba4484.ngrok-free.app
+  - url: https://c29ba4fb2eaf.ngrok-free.app
+
 paths:
-  /query:
+  /search_notes:
     post:
-      operationId: query
-      summary: 执行笔记搜索或读取操作
+      summary: 语义检索笔记
+      operationId: searchNotes
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required:         # Added required field to prevent tool=undefined errors
-                - tool
-                - args
               properties:
-                tool:
-                  type: string
-                  enum: [search_notes, get_tags, get_note, retrieve_for_rag]
-                  description: 调用的工具名称
                 args:
                   type: object
-                  description: 工具所需的参数
+                  properties:
+                    query:
+                      type: string
+                      description: 查询关键词
       responses:
         "200":
-          description: 成功响应
+          description: 成功返回匹配笔记
           content:
             application/json:
               schema:
@@ -39,11 +37,85 @@ paths:
                     type: array
                     items:
                       type: object
-                  searchMethod:
-                    type: string
-                  tags:
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        content:
+                          type: string
+
+  /retrieve_for_rag:
+    post:
+      summary: 检索上下文（RAG 模式）
+      operationId: retrieveForRag
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                args:
+                  type: object
+                  properties:
+                    query:
+                      type: string
+                      description: 查询文本
+      responses:
+        "200":
+          description: 返回相似笔记上下文
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  context:
                     type: array
                     items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                        title:
+                          type: string
+                        content:
+                          type: string
+                        score:
+                          type: number
+
+  /daily_insight_context:
+    post:
+      summary: 每日洞察生成与语义延展
+      operationId: dailyInsightContext
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                args:
+                  type: object
+                  properties:
+                    date:
                       type: string
-                  note:
-                    type: object
+                      description: 指定日期（可选）
+      responses:
+        "200":
+          description: 返回每日洞察分析
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  system_prompt:
+                    type: string
+                  today:
+                    type: array
+                    items:
+                      type: object
+                  related:
+                    type: array
+                    items:
+                      type: object
