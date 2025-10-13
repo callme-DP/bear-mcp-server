@@ -258,7 +258,7 @@ export const searchNotes = async (db, query, limit = 10, useSemanticSearch = tru
   }
 };
 
-// Retrieve a specific note by ID
+// Retrieve a specific note by ID 按ID检索特定的笔记
 export const retrieveNote = async (db, id) => {
   try {
     if (!id) {
@@ -346,3 +346,79 @@ export const retrieveForRAG = async (db, query, limit = 5) => {
     }));
   }
 };
+
+// 新增笔记
+export async function insertNote(db, title, content) {
+  try {
+    const timestamp = Date.now() / 1000 - 978307200; // Bear 时间戳格式（2001 基准）
+    const uuid = crypto.randomUUID();
+
+    await db.runAsync(`
+      INSERT INTO ZSFNOTE (
+        Z_PK, Z_ENT, Z_OPT,
+        ZUNIQUEIDENTIFIER, ZTITLE, ZTEXT, ZCREATIONDATE, ZMODIFICATIONDATE
+      )
+      VALUES (
+        (SELECT MAX(Z_PK)+1 FROM ZSFNOTE), 4, 1,
+        ?, ?, ?, ?, ?
+      )
+    `, [uuid, title, content, timestamp, timestamp]);
+
+    console.log(`✅ 新建笔记成功: ${title}`);
+    return { success: true, id: uuid };
+  } catch (error) {
+    console.error("❌ 插入笔记失败:", error);
+    return { success: false, error: error.message };
+  }
+}
+
+//今日洞察
+export async function getTodayAndRelatedNotes(db, hours = 24, limit = 5) {
+  // Step 1. 获取当天笔记
+  const now = Date.now() / 1000;
+  const start = now - hours * 3600 - 978307200;
+  const todayNotes = await db.allAsync(`
+    SELECT ZUNIQUEIDENTIFIER as id, ZTITLE as title, ZTEXT as content
+    FROM ZSFNOTE
+    WHERE ZTRASHED = 0 AND ZMODIFICATIONDATE >= ?
+    ORDER BY ZMODIFICATIONDATE DESC
+  `, [start]);
+
+  // Step 2. 合并当天内容用于后续embedding
+  const todayContent = todayNotes.map(n => n.content).join("\n");
+
+  // Step 3. 生成 embedding（如果无笔记则空）
+  let related = [];
+  if (todayContent.length > 0) {
+    related = await semanticSearch(db, todayContent, limit);
+  }
+
+  // Step 4. 返回 GPT 可直接使用的上下文结构
+  return {
+    system_prompt: `
+你是一位反思型 AI 助手（Lumi），负责帮助用户进行「每日洞察」。
+你将基于以下两类数据输出深度反思报告：
+1️⃣ 今日笔记（today）——代表今天的关注、情绪与思考主题。
+2️⃣ 相关历史笔记（related）——代表这些主题在过去的延续与演变。
+
+请分析：
+- 今日笔记中最突出的主题、关键词、语气或情感。
+- 与历史笔记相比，主题或态度有哪些演变。
+- 这些变化可能代表用户的成长方向、困惑、或新的内在趋势。
+
+输出格式：
+【今日主题】
+- …
+
+【历史呼应】
+- …
+
+【🪞今日的洞察】
+- 用 2～4 句话总结今日的核心洞察，风格温和、哲思。
+  例如：「你今天反复提到‘系统’，这显示出你在思考自我秩序与自由的平衡。」`,
+    context: {
+      today: todayNotes,
+      related
+    }
+  };
+}

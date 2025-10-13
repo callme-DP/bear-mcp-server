@@ -7,7 +7,9 @@ import {
   getAllTags,
   loadVectorIndex,
   initEmbedder,
-  retrieveForRAG
+  retrieveForRAG,
+  insertNote,
+  getTodayAndRelatedNotes,
 } from "./utils.js";
 
 let db = null;
@@ -23,8 +25,14 @@ export async function initContext() {
 }
 
 export async function modifyNoteTag(db, noteId, removeTag, addTag) {
-  await db.run(`DELETE FROM tags WHERE note_id = ? AND name = ?`, [noteId, removeTag]);
-  await db.run(`INSERT INTO tags (note_id, name) VALUES (?, ?)`, [noteId, addTag]);
+  await db.run(`DELETE FROM tags WHERE note_id = ? AND name = ?`, [
+    noteId,
+    removeTag,
+  ]);
+  await db.run(`INSERT INTO tags (note_id, name) VALUES (?, ?)`, [
+    noteId,
+    addTag,
+  ]);
   return { success: true };
 }
 
@@ -36,7 +44,9 @@ async function normalizeTagCase(db, style = "lowercase") {
   for (const tag of tags) {
     const normalized = style === "lowercase" ? tag.toLowerCase() : tag;
     if (normalized !== tag) {
-      const notes = await db.all(`SELECT note_id FROM tags WHERE name = ?`, [tag]);
+      const notes = await db.all(`SELECT note_id FROM tags WHERE name = ?`, [
+        tag,
+      ]);
       for (const note of notes) {
         await modifyNoteTag(db, note.note_id, tag, normalized);
         updates.push({ note_id: note.note_id, from: tag, to: normalized });
@@ -53,13 +63,18 @@ async function unifyTagPrefix(db, mappings) {
 
   for (const [fromPrefix, toPrefix] of Object.entries(mappings)) {
     const likeClause = `${fromPrefix}/%`;
-    const tags = await db.all(`SELECT DISTINCT name FROM tags WHERE name LIKE ?`, [likeClause]);
+    const tags = await db.all(
+      `SELECT DISTINCT name FROM tags WHERE name LIKE ?`,
+      [likeClause]
+    );
 
-    for (const tag of tags.map(t => t.name)) {
+    for (const tag of tags.map((t) => t.name)) {
       const rest = tag.slice(fromPrefix.length + 1); // 移除旧前缀
       const newTag = `${toPrefix}/${rest}`;
 
-      const notes = await db.all(`SELECT note_id FROM tags WHERE name = ?`, [tag]);
+      const notes = await db.all(`SELECT note_id FROM tags WHERE name = ?`, [
+        tag,
+      ]);
       for (const note of notes) {
         await modifyNoteTag(db, note.note_id, tag, newTag);
         updates.push({ note_id: note.note_id, from: tag, to: newTag });
@@ -80,20 +95,24 @@ export async function mergeTags(db, args) {
 
   for (const tag of fromTags) {
     // 你之前应该有 update 或 delete 的语句
-    const notes = await db.all(
-      `SELECT note_id FROM tags WHERE name = ?`,
-      [tag]
-    );
+    const notes = await db.all(`SELECT note_id FROM tags WHERE name = ?`, [
+      tag,
+    ]);
     for (const { note_id } of notes) {
       // 替换旧 tag 为新 tag
-      await db.run(`DELETE FROM tags WHERE note_id = ? AND name = ?`, [note_id, tag]);
-      await db.run(`INSERT OR IGNORE INTO tags (note_id, name) VALUES (?, ?)`, [note_id, toTag]);
+      await db.run(`DELETE FROM tags WHERE note_id = ? AND name = ?`, [
+        note_id,
+        tag,
+      ]);
+      await db.run(`INSERT OR IGNORE INTO tags (note_id, name) VALUES (?, ?)`, [
+        note_id,
+        toTag,
+      ]);
     }
   }
 
   return { success: true };
 }
-
 
 // ✅ 新增：根据标签精准查询
 export async function findNotesByTag(db, tag, limit = 20) {
@@ -107,7 +126,7 @@ export async function findNotesByTag(db, tag, limit = 20) {
     LIMIT ?
   `;
   const rows = await db.all(query, [tag, limit]);
-  return rows.map(row => ({
+  return rows.map((row) => ({
     id: row.id,
     title: row.title,
     content: row.content,
@@ -115,7 +134,6 @@ export async function findNotesByTag(db, tag, limit = 20) {
     tags: row.tags?.split(",") || [],
   }));
 }
-
 
 // ✅ 主入口
 export async function handleQuery({ tool, args }) {
@@ -149,7 +167,7 @@ export async function handleQuery({ tool, args }) {
     case "modify_note_tag": {
       const { note_id, remove_tag, add_tag } = args;
       const updated = await modifyNoteTag(db, note_id, remove_tag, add_tag);
-      console.log('✅ Modified note:', note.id, note.title);
+      console.log("✅ Modified note:", note.id, note.title);
       return { updated };
     }
     case "normalize_tag_case": {
@@ -159,20 +177,28 @@ export async function handleQuery({ tool, args }) {
       return await unifyTagPrefix(db, args.mappings);
     }
     case "find_notes_by_tag": {
-  const { tag, limit = 20 } = args;
-  const notes = await findNotesByTag(db, tag, limit);
-  return { notes };
-}
+      const { tag, limit = 20 } = args;
+      const notes = await findNotesByTag(db, tag, limit);
+      return { notes };
+    }
+    case "create_note":
+      return await insertNote(db, args.title, args.content);
+    // 今日洞察
+    case "daily_insight_context": {
+      const hours = args && args.hours ? args.hours : 24;
+      const limit = args && args.limit ? args.limit : 5;
+      return await getTodayAndRelatedNotes(db, hours, limit);
+    }
 
     /**
      * 例如：
      *  {
-      * "tool": "merge_tags",
-      * "args": {
-      * "from_tags": ["Resource", "resource", "资源"],
-      * "to_tag": "resource/阅读笔记"
-      *   }
-      * }
+     * "tool": "merge_tags",
+     * "args": {
+     * "from_tags": ["Resource", "resource", "资源"],
+     * "to_tag": "resource/阅读笔记"
+     *   }
+     * }
      */
     case "merge_tags": {
       return await mergeTags(db, args);
