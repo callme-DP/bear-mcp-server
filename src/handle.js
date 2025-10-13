@@ -136,7 +136,7 @@ export async function findNotesByTag(db, tag, limit = 20) {
 }
 
 // ✅ 主入口
-export async function handleQuery({ tool, args }) {
+export async function handleTool(tool, args) {
   if (!db) throw new Error("Database not initialized");
 
   switch (tool) {
