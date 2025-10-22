@@ -182,7 +182,9 @@ export async function handleTool(tool, args) {
       return { notes };
     }
     case "create_note":
-      return await insertNote(db, args.title, args.content);
+      const { title, content, tags = [] } = args;
+      const note_id = await insertNote(db, title, content, tags);
+      return { note_id, title, tags };
     // 今日洞察
     case "daily_insight_context": {
       const hours = args && args.hours ? args.hours : 24;

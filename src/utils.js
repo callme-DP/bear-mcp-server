@@ -423,3 +423,43 @@ const startTimestamp = todayStart.getTime() / 1000 - 978307200; // Bear时间
     }
   };
 }
+
+// 新增笔记
+export async function insertNote(db, title, content, tags = []) {
+  return new Promise((resolve, reject) => {
+    try {
+      // 构造笔记唯一 ID
+      const noteId = crypto.randomUUID();
+
+      // 获取当前时间戳（ISO 格式）
+      const now = new Date().toISOString();
+
+      // 插入 SQL，Bear 笔记表通常叫 ZSFNOTE 或 notes
+      const insertSql = `
+        INSERT INTO ZSFNOTE (Z_PK, ZTITLE, ZTEXT, ZMODIFICATIONDATE, ZCREATIONDATE)
+        VALUES (?, ?, ?, ?, ?)
+      `;
+
+      db.run(insertSql, [noteId, title, content, now, now], (err) => {
+        if (err) {
+          console.error("❌ Failed to insert note:", err);
+          return resolve({ success: false, error: err.message });
+        }
+
+        // 插入标签表（若存在）
+        if (tags.length > 0) {
+          const tagSql = `INSERT INTO ZSFNOTETAG (ZNOTE, ZTITLE) VALUES (?, ?)`;
+          tags.forEach((tag) => {
+            db.run(tagSql, [noteId, tag]);
+          });
+        }
+
+        console.log("✅ New note inserted:", title);
+        resolve({ success: true, note_id: noteId });
+      });
+    } catch (err) {
+      console.error("⚠️ createNote error:", err);
+      resolve({ success: false, error: err.message });
+    }
+  });
+}
