@@ -1,6 +1,35 @@
-node_modules
+# macOS Finder noise
 .DS_Store
 
-# Vector index files
+# Installed dependencies and virtualenvs
+node_modules
+venv/
+
+# Generated embedding/vector artifacts (export outputs)
+# symlink to data/neo4j for compatibility
+note_vectors
+# Neo4j export outputs (graph/meta/embeddings)
+data/neo4j/
+# clustering snapshots, scratch vectors
+vector_data/
 src/note_vectors.index
 src/note_vectors.json
+
+# Local Metabase database (H2)
+data/metabase/
+
+# Tool outputs and heavy local assets
+# manim rendering cache/output
+media/
+# manim video/image output
+out/
+# local Metabase drivers (ignore whole dir)
+plugins/
+# downloaded models/checkpoints
+models/
+
+# Local notes/scripts not meant for commits
+backlog/
+llamaindex/
+# local docs drafts/exports; tracked files already committed remain
+docs/
