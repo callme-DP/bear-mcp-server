@@ -23,8 +23,9 @@ const defaultDBPath = path.join(
   'Library/Group Containers/9K33E3U3T4.net.shinyfrog.bear/Application Data/database.sqlite'
 );
 
-// Path to the vector index - store in src directory
-const INDEX_PATH = path.join(__dirname, 'note_vectors');
+// Path to the vector index (override via NOTE_VECTORS_DIR, defaults to data/neo4j)
+const OUTPUT_DIR = process.env.NOTE_VECTORS_DIR || path.resolve(__dirname, "../data/neo4j");
+const INDEX_PATH = path.join(OUTPUT_DIR, "note_vectors");
 
 // Embedding model name
 const EMBEDDING_MODEL = 'Xenova/all-MiniLM-L6-v2';

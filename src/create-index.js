@@ -13,8 +13,9 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to save the vector index
-const INDEX_PATH = path.join(__dirname, 'note_vectors');
+// Path to save the vector index (override with NOTE_VECTORS_DIR)
+const OUTPUT_DIR = process.env.NOTE_VECTORS_DIR || path.resolve(__dirname, "../data/neo4j");
+const INDEX_PATH = path.join(OUTPUT_DIR, "note_vectors");
 
 // Main indexing function
 async function createVectorIndex() {

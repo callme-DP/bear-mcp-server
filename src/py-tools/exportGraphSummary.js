@@ -20,7 +20,8 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 // ===== 可调参数 =====
-const OUTPUT_DIR = path.resolve(__dirname, "../note_vectors");
+// Allow override; default writes to consolidated data/neo4j.
+const OUTPUT_DIR = process.env.NOTE_VECTORS_DIR || path.resolve(__dirname, "../data/neo4j");
 const MODEL_DIR = path.resolve(__dirname, "../../models/distilbart-cnn-6-6");
 
 // const OUTPUT_DIR = path.join(__dirname, "exports");

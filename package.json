@@ -5,7 +5,9 @@
   "main": "src/bear-mcp-server.js",
   "type": "module",
   "scripts": {
-    "start": "node src/server.js"
+    "start": "node src/server.js",
+    "cluster-llama": "python3 llamaindex/cluster_recent.py",
+    "load-cluster-sqlite": "python3 llamaindex/load_clusters_to_sqlite.py"
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
