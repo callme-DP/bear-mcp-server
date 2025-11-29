@@ -89,6 +89,14 @@ Bear 是一个优秀的个人知识管理工具，但它缺少：
 
 MCP 是整个系统的“对话接口”，让智能体可以自然访问你的第二大脑。
 
+## 5. 🧱 Chunk 管道与相似图
+
+长文/多主题笔记的分块、索引与相似图：
+
+* 切分与索引：`src/chunk/chunker.js`（标题感知分块），`src/chunk/create-index-chunk.js`（生成 meta_chunks.json + chunk_embeddings.json + FAISS 索引），`src/chunk/import_to_neo4j_brew.py`（导入 Chunk 节点、HAS_CHUNK 关系，兜底补 Note）。
+* 相似边：`scripts/chunk/build-chunk-sim.js`（基于 chunk_embeddings.json 计算 TopK，相似度=1/(1+d)，输出 chunk_sim_edges.json + chunk_full.json），`scripts/chunk/import-chunk-sim.js`（UNWIND 批量写入 `:SIMILAR_CHUNK`，按 chunk_id 匹配）。
+* 调试/对比：`scripts/chunk/chunk-preview.js`（按 note_id 预览分块），`scripts/chunk/compare-recall.js`（整篇 vs 分块召回对比）。
+
 ---
 
 # 💬 语义对话 / 查询示例
