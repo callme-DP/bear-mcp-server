@@ -114,6 +114,16 @@ MCP 是整个系统的“对话接口”，让智能体可以自然访问你的�
    会返回语义匹配的笔记，即使没有显式“SOP”标签也能命中。
    在 MCP 客户端则调用 `search_notes` 工具并设置 `semantic: true`。
 
+## 🧠 Chunk 级 RAG（LlamaIndex，复用现有索引）
+
+- 输入：`data/neo4j/meta_chunks.json` + `note_vectors_chunk.index` + `note_vectors_chunk.json`（可用 `CHUNK_VECTORS_DIR` / `NOTE_VECTORS_DIR` 覆盖目录）。
+- 节点构建：`src/rag/chunk/loadChunkNodes.js` 将 meta 转成 `TextNode`，metadata 保留 `chunk_id/note_id/heading/order`。
+- 索引挂载：`src/rag/chunk/faissChunkVectorStore.js` 直接读取已有 FAISS（384 维），不重新 embed。
+- 检索策略：`src/rag/chunk/chunkRetriever.js` 先 top-K，再自动拼接前后 chunk 上下文。
+- QueryEngine：`src/rag/chunk/queryEngine.js` 封装 QueryEngine / retriever；脚本示例 `npm run chunk-query -- "你的问题"`（默认 query：外界不给反馈时，我应该如何稳住自己？）。
+- 可选图层：`src/rag/chunk/neo4jGraphStore.js` 可直接构造 LlamaIndex `Neo4jGraphStore` 对接 Neo4j。
+- LlamaIndex 集成：`buildChunkQueryEngine` 会优先使用 LlamaIndex 的 `RetrieverQueryEngine`（OpenAI/Gemini/Ollama 按优先级自动选择），生成式回答；如需关闭 LLM 总结，仅用检索拼接，可设 `CHUNK_LLM_DISABLE=1`；脚本示例 `CHUNK_LLM_DISABLE=1 npm run chunk-query -- "你的问题"`。
+- 运行输出：`npm run chunk-query -- "问题"` 会在控制台打印响应，并把 `{query,response,sourceNodes}` 持久化到 `out/chunk-query/YYYYMMDDTHHmm.json` 便于回溯。
 ---
 
 # 🎯 架构设计（Architecture）

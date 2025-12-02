@@ -111,7 +111,8 @@ export const createEmbedding = async (text) => {
   
   try {
     // Generate embeddings using Xenova transformers
-    const result = await embedder(text, { 
+    const safeText = typeof text === 'string' ? text : JSON.stringify(text ?? '');
+    const result = await embedder(safeText, { 
       pooling: 'mean',
       normalize: true 
     });
@@ -121,6 +122,30 @@ export const createEmbedding = async (text) => {
   } catch (error) {
     console.error('Error creating embedding:', error);
     throw error;
+  }
+};
+
+// Optional helper: tokenize query for debugging
+export const tokenizeForEmbedding = async (text) => {
+  if (!embedder) {
+    const initialized = await initEmbedder();
+    if (!initialized) {
+      throw new Error('Failed to initialize embedding model');
+    }
+  }
+  if (!embedder?.tokenizer) return null;
+  try {
+    const safeText = text == null ? '' : String(text);
+    const encoded = await embedder.tokenizer.encode(safeText, { addSpecialTokens: true });
+    return {
+      tokenIds: encoded,
+      tokenCount: encoded.length,
+      // best-effort decode per token for readability
+      tokens: encoded.map((id) => embedder.tokenizer.decode([id], { skipSpecialTokens: false })),
+    };
+  } catch (error) {
+    console.warn('Error tokenizing text (continuing without token info):', error?.message || error);
+    return null;
   }
 };
 
