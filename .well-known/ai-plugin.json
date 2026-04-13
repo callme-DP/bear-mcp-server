@@ -1,17 +1,178 @@
 {
-  "schema_version": "v1.0",
-  "name_for_model": "bear_notes",
-  "name_for_human": "Bear Notes",
-  "description_for_model": "插件，用于检索用户的 Bear 笔记内容，支持关键词和语义搜索。",
-  "description_for_human": "从 Bear 笔记中检索信息。",
+  "schema_version": "v1",
+  "name_for_human": "Bear Notes Plugin",
+  "name_for_model": "bear_notes_plugin",
+  "description_for_human": "连接你的 Bear 笔记系统，支持语义检索、洞察生成与笔记写入。",
+  "description_for_model": "一个用于访问本地 Bear 笔记数据库的插件，提供语义检索、每日洞察生成和创建笔记的接口。",
   "auth": {
     "type": "none"
   },
   "api": {
     "type": "openapi",
-    "url": "https://30bf06ba4484.ngrok-free.app/openapi.yaml"
+    "url": "https://c29ba4fb2eaf.ngrok-free.app/.well-known/openapi.yaml"
   },
-  "logo_url": "https://30bf06ba4484.ngrok-free.app/logo.png",
-  "contact_email": "contact@yourdomain.com",
-  "legal_info_url": "https://30bf06ba4484.ngrok-free.app/legal"
+  "logo_url": "https://c29ba4fb2eaf.ngrok-free.app/.well-known/logo.svg",
+  "contact_email": "support@lumiai.local",
+  "legal_info_url": "https://c29ba4fb2eaf.ngrok-free.app/legal",
+  "endpoints": {
+    "search_notes": {
+      "method": "POST",
+      "path": "/search_notes",
+      "summary": "语义检索笔记",
+      "description": "根据关键词或语义内容搜索本地 Bear 笔记，返回匹配的标题、摘要与 ID。",
+      "parameters": {
+        "args.query": {
+          "type": "string",
+          "description": "搜索关键词或句子"
+        }
+      },
+      "response": {
+        "notes": [
+          {
+            "id": "string",
+            "title": "string",
+            "content": "string"
+          }
+        ]
+      }
+    },
+    "retrieve_for_rag": {
+      "method": "POST",
+      "path": "/retrieve_for_rag",
+      "summary": "向量语义检索笔记",
+      "description": "使用嵌入模型查找语义上相似的笔记，用于 RAG（检索增强生成）任务。",
+      "parameters": {
+        "args.query": {
+          "type": "string",
+          "description": "待匹配的语义文本"
+        }
+      },
+      "response": {
+        "context": [
+          {
+            "id": "string",
+            "title": "string",
+            "score": "float"
+          }
+        ]
+      }
+    },
+    "daily_insight_context": {
+      "method": "POST",
+      "path": "/daily_insight_context",
+      "summary": "生成每日反思上下文",
+      "description": "从 Bear 笔记中提取今日笔记与历史相关笔记，返回结构化的上下文与提示词，用于 GPT 洞察生成。",
+      "parameters": {
+        "args.hours": {
+          "type": "integer",
+          "default": 24,
+          "description": "检索最近多少小时的笔记（默认 24 小时）"
+        },
+        "args.limit": {
+          "type": "integer",
+          "default": 5,
+          "description": "返回历史语义笔记数量"
+        }
+      },
+      "response": {
+        "system_prompt": "string",
+        "context": {
+          "today": [
+            {
+              "id": "string",
+              "title": "string",
+              "content": "string"
+            }
+          ],
+          "related": [
+            {
+              "id": "string",
+              "title": "string",
+              "score": "float"
+            }
+          ]
+        }
+      }
+    },
+    "create_note": {
+      "method": "POST",
+      "path": "/create_note",
+      "summary": "创建新笔记",
+      "description": "将生成的内容或洞察写入 Bear 笔记系统。",
+      "parameters": {
+        "args.title": {
+          "type": "string",
+          "description": "新笔记标题"
+        },
+        "args.content": {
+          "type": "string",
+          "description": "笔记内容"
+        }
+      },
+      "response": {
+        "status": "string",
+        "note_id": "string"
+      }
+    },
+    "agent_session_start": {
+      "method": "POST",
+      "path": "/agent/session/start",
+      "summary": "启动 Boss-Agent 会话",
+      "description": "给 Agent 一个目标并立刻执行首轮循环，返回 sessionId 与首轮中文汇报。",
+      "parameters": {
+        "goal": {
+          "type": "string",
+          "description": "老板目标，例如：查找包含AI标签的笔记并做摘要"
+        }
+      },
+      "response": {
+        "sessionId": "string",
+        "report": "string",
+        "status": "active|done|max_rounds_reached|ended"
+      }
+    },
+    "agent_session_message": {
+      "method": "POST",
+      "path": "/agent/session/message",
+      "summary": "向 Boss-Agent 会话发送指令",
+      "description": "在已有会话中发送“继续 / 调整... / 结束”，Agent 会返回本轮汇报。",
+      "parameters": {
+        "sessionId": {
+          "type": "string",
+          "description": "start 接口返回的会话 ID"
+        },
+        "message": {
+          "type": "string",
+          "description": "支持：继续、调整 <要求>、结束"
+        }
+      },
+      "response": {
+        "status": "active|done|max_rounds_reached|ended",
+        "round": "integer",
+        "report": "string"
+      }
+    },
+    "agent_session_get": {
+      "method": "GET",
+      "path": "/agent/session/{id}",
+      "summary": "获取 Boss-Agent 会话状态",
+      "description": "查看会话当前轮次、状态、输出、聊天与执行记忆。",
+      "parameters": {
+        "id": {
+          "type": "string",
+          "description": "会话 ID"
+        }
+      },
+      "response": {
+        "id": "string",
+        "status": "active|done|max_rounds_reached|ended",
+        "round": "integer",
+        "output": "string"
+      }
+    }
+  },
+  "ui": {
+    "primary_color": "#EF6C00",
+    "accent_color": "#FBE9E7"
+  }
 }

@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128" role="img" aria-label="Bear MCP">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#EF6C00"/>
+      <stop offset="100%" stop-color="#F57C00"/>
+    </linearGradient>
+  </defs>
+  <rect width="128" height="128" rx="20" fill="#FFF3E0"/>
+  <rect x="16" y="16" width="96" height="96" rx="16" fill="url(#g)"/>
+  <path d="M36 42h56v8H36zm0 18h56v8H36zm0 18h36v8H36z" fill="#fff"/>
+  <circle cx="88" cy="82" r="12" fill="#fff" opacity="0.9"/>
+</svg>
