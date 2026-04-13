@@ -4,6 +4,7 @@
 - 工作流：`.github/workflows/pr-review.yml`
 - 审查脚本：`scripts/analyze-pr.mjs`
 - 触发时机：PR `opened / synchronize / reopened`
+- 支持手动触发：`workflow_dispatch`（可选传 `pr_number`）
 - 行为：拉取 PR diff -> 调用 OpenAI -> 在 PR 评论区创建或更新一条审查评论
 
 ## 2. GitHub 仓库配置（必须）

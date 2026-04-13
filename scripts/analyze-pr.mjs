@@ -1,6 +1,6 @@
 import fs from "node:fs";
 
-const REQUIRED_ENV = ["GITHUB_TOKEN", "GITHUB_REPOSITORY", "GITHUB_EVENT_PATH"];
+const REQUIRED_ENV = ["GITHUB_TOKEN", "GITHUB_REPOSITORY"];
 const REVIEW_MARKER = "<!-- codex-pr-review -->";
 const REVIEW_HEADER = "## AI 自动代码审查（Codex Agent）";
 
@@ -122,10 +122,20 @@ async function upsertComment(repo, prNumber, body) {
 async function main() {
   assertEnv();
 
-  const event = readJson(process.env.GITHUB_EVENT_PATH);
-  const prNumber = event?.pull_request?.number;
+  let event = {};
+  if (process.env.GITHUB_EVENT_PATH && fs.existsSync(process.env.GITHUB_EVENT_PATH)) {
+    event = readJson(process.env.GITHUB_EVENT_PATH);
+  }
+
+  const prNumberFromEvent = Number(event?.pull_request?.number);
+  const prNumberFromInput = Number(process.env.PR_NUMBER || "");
+  const prNumber =
+    (Number.isFinite(prNumberFromEvent) && prNumberFromEvent > 0 && prNumberFromEvent) ||
+    (Number.isFinite(prNumberFromInput) && prNumberFromInput > 0 && prNumberFromInput) ||
+    null;
+
   if (!prNumber) {
-    throw new Error("当前事件不是 pull_request，无法定位 PR number");
+    throw new Error("无法定位 PR number（pull_request 事件或 PR_NUMBER 输入）");
   }
 
   const repo = process.env.GITHUB_REPOSITORY;
